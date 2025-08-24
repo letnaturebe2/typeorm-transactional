@@ -93,7 +93,12 @@ export abstract class BaseTransactionalService {
   protected constructor(protected readonly dataSource: DataSource) {}
 
   protected getRepository<T extends object>(entity: new () => T): Repository<T> {
+    const manager = this.getManager();
+    return manager.getRepository(entity);
+  }
+
+  protected getManager(): EntityManager {
     const manager = getCurrentTransactionManager(this.dataSource);
-    return manager ? manager.getRepository(entity) : this.dataSource.getRepository(entity);
+    return manager ? manager : this.dataSource.manager;
   }
 }
