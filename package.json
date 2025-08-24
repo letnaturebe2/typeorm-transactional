@@ -8,8 +8,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:all": "jest",
-    "build": "tsc",
-    "dev": "ts-node src/index.ts"
+    "build": "tsc"
   },
   "dependencies": {
     "reflect-metadata": "^0.1.14"
