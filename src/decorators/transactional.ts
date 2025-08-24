@@ -97,8 +97,4 @@ export abstract class BaseTransactionalService {
     const manager = getCurrentTransactionManager();
     return manager ? manager.getRepository(entity) : this.dataSource.getRepository(entity);
   }
-
-  public isInTransaction(): boolean {
-    return getCurrentTransactionManager() !== null;
-  }
 }
