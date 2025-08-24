@@ -34,8 +34,8 @@ export function Transactional(options: TransactionalOptions = {}) {
       const dataSource: DataSource = (this as any).dataSource;
 
       if (!dataSource) {
-        throw new TransactionError(
-          `DataSource not found in ${target.constructor.name}. Make sure your service has a 'dataSource' property.`,
+        throw new Error(
+          `DataSource not found in ${target.constructor.name}. Make sure your service has a 'dataSource' property.`
         );
       }
 
@@ -63,21 +63,6 @@ export function Transactional(options: TransactionalOptions = {}) {
 
 export function getCurrentTransactionManager(): EntityManager | null {
   return transactionContext.getStore() || null;
-}
-
-export class TransactionError extends Error {
-  constructor(
-    message: string,
-    public readonly originalError?: Error,
-    public readonly context?: any,
-  ) {
-    super(message);
-    this.name = 'TransactionError';
-
-    if (originalError?.stack) {
-      this.stack = originalError.stack;
-    }
-  }
 }
 
 export abstract class BaseTransactionalService {
