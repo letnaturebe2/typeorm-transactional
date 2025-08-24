@@ -52,17 +52,7 @@ export function Transactional(options: TransactionalOptions = {}) {
       return await dataSource.transaction(isolationLevel, async (manager: EntityManager) => {
         // Set the transaction context using AsyncLocalStorage
         return await transactionContext.run(manager, async () => {
-          try {
-            return await originalMethod.apply(this, args);
-          } catch (error) {
-            console.error(`Transaction rolled back in ${target.constructor.name}.${propertyName}:`, {
-              error: error instanceof Error ? error.message : String(error),
-              isolation: isolationLevel,
-              propagation: options.propagation || 'REQUIRED',
-            });
-
-            throw error;
-          }
+          return await originalMethod.apply(this, args);
         });
       });
     };
