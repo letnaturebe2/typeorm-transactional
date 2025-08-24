@@ -1,11 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { User } from '../../entity/user.model';
-import { Organization } from '../../entity/organization.model';
-import { BaseTransactionalService, Transactional } from '../../decorators/transactional';
+import { User } from '../../../entity/user.model';
+import { Organization } from '../../../entity/organization.model';
 import { NestJSOrganizationService } from './organization.service';
 import { NestJSUserService } from './user.service';
-import { SignupDto } from '../../types/dto';
+import {BaseTransactionalService, SignupDto, Transactional} from "../../../../src";
 
 @Injectable()
 export class NestJSSignupService extends BaseTransactionalService {

@@ -1,9 +1,9 @@
 import express from 'express';
 import { DataSource } from 'typeorm';
 import { SignupController } from './controller/signup.controller';
-import { SignupService } from '@/service/signup.service';
-import { OrganizationService } from '@/service/organization.service';
-import { UserService } from '@/service/user.service';
+import {OrganizationService} from "../../service/organization.service";
+import {UserService} from "../../service/user.service";
+import {SignupService} from "../../service/signup.service";
 
 export interface AppServices {
   organizationService?: OrganizationService;

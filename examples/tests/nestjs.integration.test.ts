@@ -2,17 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
-import { Organization } from '../src/entity/organization.model';
-import { User } from '../src/entity/user.model';
-import { NestJSUserService } from '../src/nestjs/service/user.service';
-import { createAppModuleConfig } from '../src/nestjs/app.module';
+import {Organization} from "../entity/organization.model";
+import {User} from "../entity/user.model";
 import {
   ensureTestDatabaseInitialized,
   clearAllTestData,
-  getRepositories,
-  getServices
+  getRepositories
 } from './config/test-utils';
 import { testDataSource } from './config/test-db';
+import {NestJSUserService} from "../example/nestjs/service/user.service";
+import {createAppModuleConfig} from "../example/nestjs/app.module";
 
 describe('NestJS Integration Test - @Transactional decorator with HTTP endpoints', () => {
   let app: INestApplication;
@@ -26,8 +25,7 @@ describe('NestJS Integration Test - @Transactional decorator with HTTP endpoints
     dataSource = testDataSource;
     
     const repositories = getRepositories();
-    const services = getServices();
-    
+
     organizationRepository = repositories.organizationRepository;
     userRepository = repositories.userRepository;
   });

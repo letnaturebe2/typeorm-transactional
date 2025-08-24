@@ -1,10 +1,9 @@
-import { Repository } from 'typeorm';
-import { User } from '../../src/entity/user.model';
-import { Organization } from '../../src/entity/organization.model';
-import { UserService } from '../../src/service/user.service';
-import { OrganizationService } from '../../src/service/organization.service';
-import { SignupService } from '../../src/service/signup.service';
 import { testDataSource } from './test-db';
+import {Organization} from "../../entity/organization.model";
+import {User} from "../../entity/user.model";
+import {OrganizationService} from "../../service/organization.service";
+import {UserService} from "../../service/user.service";
+import {SignupService} from "../../service/signup.service";
 
 let isInitialized = false;
 

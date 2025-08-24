@@ -1,6 +1,4 @@
 import { DataSource, Repository } from 'typeorm';
-import { Organization } from '../src/entity/organization.model';
-import { User } from '../src/entity/user.model';
 import {
   ensureTestDatabaseInitialized,
   clearAllTestData,
@@ -8,8 +6,10 @@ import {
   getServices
 } from './config/test-utils';
 import { testDataSource } from './config/test-db';
-import { UserService } from '../src/service/user.service';
-import { SignupService } from '../src/service/signup.service';
+import {Organization} from "../entity/organization.model";
+import {User} from "../entity/user.model";
+import {UserService} from "../service/user.service";
+import {SignupService} from "../service/signup.service";
 
 describe('@Transactional decorator nested test using existing services', () => {
   let dataSource: DataSource;

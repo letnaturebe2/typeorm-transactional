@@ -1,9 +1,5 @@
 import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
-import { Organization } from '../src/entity/organization.model';
-import { User } from '../src/entity/user.model';
-import { UserService } from '../src/service/user.service';
-import { createApp } from '../src/express/app';
 import {
   ensureTestDatabaseInitialized,
   clearAllTestData,
@@ -12,6 +8,10 @@ import {
 } from './config/test-utils';
 import { testDataSource } from './config/test-db';
 import express from "express";
+import {Organization} from "../entity/organization.model";
+import {User} from "../entity/user.model";
+import {UserService} from "../service/user.service";
+import {createApp} from "../example/express/app";
 
 describe('Express Integration Test - @Transactional decorator with HTTP endpoints', () => {
   let app: express.Application;

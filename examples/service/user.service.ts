@@ -1,7 +1,7 @@
 import {DataSource} from 'typeorm';
 import {BaseTransactionalService, Transactional} from "@/decorators/transactional";
-import {CreateUserDto} from "@/types/dto";
-import {User} from "@/entity/user.model";
+import {User} from "../entity/user.model";
+import {CreateUserDto} from "../types/dto";
 
 export class UserService extends BaseTransactionalService {
   constructor(dataSource: DataSource) {

@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { Organization } from '../../entity/organization.model';
-import { BaseTransactionalService, Transactional } from '../../decorators/transactional';
+import { Organization } from '../../../entity/organization.model';
+import {BaseTransactionalService, Transactional} from "../../../../src";
 
 export interface CreateOrganizationDto {
   organizationId: string;

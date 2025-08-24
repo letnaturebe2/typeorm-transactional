@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { User } from '../../entity/user.model';
-import { Organization } from '../../entity/organization.model';
-import { BaseTransactionalService, Transactional } from '../../decorators/transactional';
+import { User } from '../../../entity/user.model';
+import { Organization } from '../../../entity/organization.model';
+import {BaseTransactionalService, Transactional} from "../../../../src";
 
 export interface CreateUserDto {
   userId: string;

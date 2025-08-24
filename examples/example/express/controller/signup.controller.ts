@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { SignupService } from '../../service/signup.service';
+import { SignupService } from '../../../service/signup.service';
 
 export interface SignupRequest {
   organizationId: string;

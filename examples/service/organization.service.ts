@@ -1,7 +1,7 @@
 import {DataSource} from 'typeorm';
 import {BaseTransactionalService, Transactional} from "@/decorators/transactional";
-import {CreateOrganizationDto} from "@/types/dto";
-import {Organization} from "@/entity/organization.model";
+import {Organization} from "../entity/organization.model";
+import {CreateOrganizationDto} from "../types/dto";
 
 export class OrganizationService extends BaseTransactionalService {
   constructor(dataSource: DataSource) {

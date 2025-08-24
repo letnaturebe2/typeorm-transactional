@@ -8,8 +8,22 @@ export interface TransactionalOptions {
   propagation?: 'REQUIRED' | 'REQUIRES_NEW';
 }
 
-// Global transaction context using AsyncLocalStorage
-const transactionContext = new AsyncLocalStorage<EntityManager>();
+interface TransactionContextData {
+  manager: EntityManager;
+  dataSource: DataSource;
+}
+
+// Transaction context per DataSource to avoid conflicts
+const transactionContexts = new WeakMap<DataSource, AsyncLocalStorage<TransactionContextData>>();
+
+function getTransactionContext(dataSource: DataSource): AsyncLocalStorage<TransactionContextData> {
+  let context = transactionContexts.get(dataSource);
+  if (!context) {
+    context = new AsyncLocalStorage<TransactionContextData>();
+    transactionContexts.set(dataSource, context);
+  }
+  return context;
+}
 
 function getSupportedIsolationLevel(dataSource: DataSource, requestedLevel?: IsolationLevel): IsolationLevel {
   const dbType = dataSource.options.type;
@@ -39,10 +53,11 @@ export function Transactional(options: TransactionalOptions = {}) {
         );
       }
 
-      // Check for existing transaction in the global context
-      const existingManager = getCurrentTransactionManager();
+      // Check for existing transaction in the context for this DataSource
+      const context = getTransactionContext(dataSource);
+      const existingContext = context.getStore();
 
-      if (existingManager && options.propagation !== 'REQUIRES_NEW') {
+      if (existingContext && options.propagation !== 'REQUIRES_NEW') {
         // If there is an existing transaction and propagation is not REQUIRES_NEW, join the existing transaction
         return await originalMethod.apply(this, args);
       }
@@ -50,8 +65,9 @@ export function Transactional(options: TransactionalOptions = {}) {
       const isolationLevel = getSupportedIsolationLevel(dataSource, options.isolation);
 
       return await dataSource.transaction(isolationLevel, async (manager: EntityManager) => {
-        // Set the transaction context using AsyncLocalStorage
-        return await transactionContext.run(manager, async () => {
+        // Set the transaction context using AsyncLocalStorage per DataSource
+        const contextData: TransactionContextData = { manager, dataSource };
+        return await context.run(contextData, async () => {
           return await originalMethod.apply(this, args);
         });
       });
@@ -61,15 +77,23 @@ export function Transactional(options: TransactionalOptions = {}) {
   };
 }
 
-export function getCurrentTransactionManager(): EntityManager | null {
-  return transactionContext.getStore() || null;
+export function getCurrentTransactionManager(dataSource?: DataSource): EntityManager | null {
+  if (!dataSource) {
+    // If no dataSource provided, return null - user should provide dataSource
+    // for proper context isolation
+    return null;
+  }
+  
+  const context = getTransactionContext(dataSource);
+  const contextData = context.getStore();
+  return contextData ? contextData.manager : null;
 }
 
 export abstract class BaseTransactionalService {
   protected constructor(protected readonly dataSource: DataSource) {}
 
   protected getRepository<T extends object>(entity: new () => T): Repository<T> {
-    const manager = getCurrentTransactionManager();
+    const manager = getCurrentTransactionManager(this.dataSource);
     return manager ? manager.getRepository(entity) : this.dataSource.getRepository(entity);
   }
 }
