@@ -2,21 +2,47 @@
 
 A clean transaction management library for TypeORM, inspired by Spring's `@Transactional` decorator.
 
+## Quick Start
+1. **Extend `BaseTransactionalService`** - Inject TypeORM `DataSource` in constructor
+2. **Use `getRepository()` or `getManager()`** - Access repositories within transaction context
+3. **Decorate with `@Transactional()`** - Methods execute in a single transaction
+
+```typescript
+import { DataSource } from 'typeorm';
+import { BaseTransactionalService, Transactional } from 'typeorm-transactional-service';
+
+export class UserService extends BaseTransactionalService {
+  constructor(dataSource: DataSource) {
+    super(dataSource);  // 1. Extend and inject DataSource
+  }
+
+  @Transactional()  // 3. Use @Transactional decorator
+  async createUser(userData: CreateUserDto) {
+    const userRepo = this.getRepository(User);  // 2. Use getRepository()
+    return await userRepo.save(userRepo.create(userData));
+  }
+}
+```
+
+**Key Benefits:**
+- 🔄 **Transaction Propagation** - Nested service calls share the same transaction
+- 🛡️ **Automatic Rollback** - Any error rolls back the entire transaction
+- 🎯 **Zero Configuration** - Works out of the box with any TypeORM setup
+
 ## Installation
 
 ```bash
 npm install typeorm-transactional-service
 ```
 
-## Basic Usage
+## Core Concepts
 
-### 1. Extend BaseTransactionalService
+### 1. Service Implementation
 
 ```typescript
 import { DataSource } from 'typeorm';
 import { BaseTransactionalService, Transactional } from 'typeorm-transactional-service';
 import { User } from './entity/user.model';
-import { Organization } from './entity/organization.model';
 
 export class UserService extends BaseTransactionalService {
   constructor(dataSource: DataSource) {
@@ -25,14 +51,18 @@ export class UserService extends BaseTransactionalService {
 
   @Transactional()
   async createUser(userData: CreateUserDto) {
+    // Use this.getRepository() to get transaction-aware repository
     const userRepo = this.getRepository(User);
-    const user = await userRepo.save(userRepo.create(userData));
-    return user;
+
+    // Or use this.getManager() for direct entity manager access
+    // const manager = this.getManager();
+
+    return await userRepo.save(userRepo.create(userData));
   }
 }
 ```
 
-### 2. Multi-Service Transaction
+### 2. Multi-Service Transactions
 
 ```typescript
 export class SignupService extends BaseTransactionalService {
@@ -105,21 +135,6 @@ async independentOperation() {
 }
 ```
 
-### 4. Using Outside Services
-
-```typescript
-import { getCurrentTransactionManager } from 'typeorm-transactional-service';
-
-// Get current transaction manager
-const manager = getCurrentTransactionManager(dataSource);
-if (manager) {
-  // Use transaction manager directly
-  await manager.save(entity);
-} else {
-  // No active transaction, use default manager
-  await dataSource.manager.save(entity);
-}
-```
 
 ## Features
 
@@ -189,6 +204,220 @@ test('should rollback entire transaction when user creation fails', async () => 
   expect(org).toBeNull(); // ✅ Rolled back
 });
 ```
+
+## Express.js Integration
+
+Create services that extend `BaseTransactionalService`, then wire them into your Express app. Methods with `@Transactional()` execute within a single transaction and automatically propagate across nested service calls.
+
+```typescript
+import express from 'express';
+import { DataSource } from 'typeorm';
+import { BaseTransactionalService, Transactional } from 'typeorm-transactional-service';
+
+// Define your services
+class OrganizationService extends BaseTransactionalService {
+  constructor(dataSource: DataSource) {
+    super(dataSource);
+  }
+
+  @Transactional()
+  async createOrganization(dto: { organizationId: string; isEnterprise?: boolean }) {
+    const orgRepo = this.getRepository(Organization);
+    return await orgRepo.save(orgRepo.create(dto));
+  }
+}
+
+class SignupService extends BaseTransactionalService {
+  constructor(
+    dataSource: DataSource,
+    private readonly orgService: OrganizationService,
+    private readonly userService: UserService,
+  ) {
+    super(dataSource);
+  }
+
+  // All nested service calls share the same transaction
+  @Transactional()
+  async signup(dto: { organizationId: string; userId: string; userName: string }) {
+    const organization = await this.orgService.createOrganization({
+      organizationId: dto.organizationId,
+      isEnterprise: false,
+    });
+
+    const user = await this.userService.createUser({
+      userId: dto.userId,
+      name: dto.userName,
+    });
+
+    // Link user to organization using getRepository()
+    const userRepo = this.getRepository(User);
+    user.organization = organization;
+    await userRepo.save(user);
+
+    return { organization, user };
+  }
+}
+
+// Express app setup
+const app = express();
+app.use(express.json());
+
+// Initialize services
+const dataSource = new DataSource(/* your config */);
+const organizationService = new OrganizationService(dataSource);
+const userService = new UserService(dataSource);
+const signupService = new SignupService(dataSource, organizationService, userService);
+
+// Routes
+app.post('/signup', async (req, res) => {
+  try {
+    const result = await signupService.signup(req.body);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+```
+
+**See complete examples:**
+- `src/examples/example/express/app.ts`
+- `src/examples/example/express/controller/signup.controller.ts`
+- `src/examples/service/*`
+
+## NestJS Integration
+
+Register services with `@Injectable()` and inject the `DataSource`. Methods with `@Transactional()` define transaction boundaries that propagate across service calls.
+
+```typescript
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { SignupController } from './controller/signup.controller';
+import { OrganizationService } from './service/organization.service';
+import { UserService } from './service/user.service';
+import { SignupService } from './service/signup.service';
+
+@Module({
+  controllers: [SignupController],
+  providers: [
+    {
+      provide: 'DATA_SOURCE',
+      useFactory: async () => {
+        const dataSource = new DataSource(/* your config */);
+        return await dataSource.initialize();
+      },
+    },
+    OrganizationService,
+    UserService,
+    SignupService,
+  ],
+})
+export class AppModule {}
+```
+
+```typescript
+// user.service.ts
+import { Injectable, Inject } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { BaseTransactionalService, Transactional } from 'typeorm-transactional-service';
+import { User } from '../entity/user.entity';
+
+@Injectable()
+export class UserService extends BaseTransactionalService {
+  constructor(@Inject('DATA_SOURCE') protected readonly dataSource: DataSource) {
+    super(dataSource);
+  }
+
+  @Transactional()
+  async createUser(dto: { userId: string; name: string }) {
+    const userRepo = this.getRepository(User);
+    return await userRepo.save(userRepo.create(dto));
+  }
+}
+
+// signup.service.ts
+@Injectable()
+export class SignupService extends BaseTransactionalService {
+  constructor(
+    @Inject('DATA_SOURCE') protected readonly dataSource: DataSource,
+    private readonly organizationService: OrganizationService,
+    private readonly userService: UserService,
+  ) {
+    super(dataSource);
+  }
+
+  // All service calls share the same transaction
+  @Transactional()
+  async signup(dto: { organizationId: string; userId: string; userName: string }) {
+    const organization = await this.organizationService.createOrganization({
+      organizationId: dto.organizationId,
+      isEnterprise: false,
+    });
+
+    const user = await this.userService.createUser({
+      userId: dto.userId,
+      name: dto.userName,
+    });
+
+    // Link entities using getRepository()
+    const userRepo = this.getRepository(User);
+    user.organization = organization;
+    await userRepo.save(user);
+
+    return { organization, user };
+  }
+}
+```
+
+```typescript
+// signup.controller.ts
+import { Body, Controller, Post } from '@nestjs/common';
+import { SignupService } from '../service/signup.service';
+
+@Controller('signup')
+export class SignupController {
+  constructor(private readonly signupService: SignupService) {}
+
+  @Post()
+  async signup(@Body() body: { organizationId: string; userId: string; userName: string }) {
+    const result = await this.signupService.signup(body);
+    return { success: true, data: result };
+  }
+}
+```
+
+**See complete examples:**
+- `src/examples/example/nestjs/app.module.ts`
+- `src/examples/example/nestjs/service/*.ts`
+- `src/examples/example/nestjs/controller/signup.controller.ts`
+
+## How It Works
+
+This library uses **Node.js AsyncLocalStorage** to maintain transaction context across asynchronous operations:
+
+1. **Context Creation**: When `@Transactional()` is called, it creates or joins a transaction and stores the `EntityManager` in AsyncLocalStorage
+2. **Context Propagation**: All nested service calls within the same async context automatically share the same transaction
+3. **Smart Repository Access**: `getRepository()` and `getManager()` check AsyncLocalStorage first, falling back to default DataSource if no transaction exists
+4. **Per-DataSource Isolation**: Each DataSource has its own AsyncLocalStorage context, preventing conflicts in multi-database setups
+
+```typescript
+// Simplified flow:
+class SignupService extends BaseTransactionalService {
+  @Transactional()
+  async signup() {
+    // 1. Transaction starts, EntityManager stored in AsyncLocalStorage
+    await this.orgService.createOrg();     // 2. Uses same transaction context
+    await this.userService.createUser();   // 3. Uses same transaction context
+    // 4. Transaction commits (or rolls back on error)
+  }
+}
+```
+
+**Why AsyncLocalStorage?**
+- ✅ No need to pass transaction objects through method parameters
+- ✅ Works seamlessly with existing TypeORM code
+- ✅ Maintains context across `await` boundaries
+- ✅ Zero performance impact when not in transaction
 
 ## Requirements
 

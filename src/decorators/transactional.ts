@@ -23,7 +23,7 @@ const transactionContexts = new WeakMap<
   AsyncLocalStorage<TransactionContextData>
 >();
 
-function getTransactionContext(
+function getOrCreateTransactionContext(
   dataSource: DataSource,
 ): AsyncLocalStorage<TransactionContextData> {
   let context = transactionContexts.get(dataSource);
@@ -82,7 +82,7 @@ export function Transactional(options: TransactionalOptions = {}) {
       }
 
       // Check for existing transaction in the context for this DataSource
-      const context = getTransactionContext(dataSource);
+      const context = getOrCreateTransactionContext(dataSource);
       const existingContext = context.getStore();
 
       if (existingContext && options.propagation !== 'REQUIRES_NEW') {
@@ -121,7 +121,7 @@ export function getCurrentTransactionManager(
     return null;
   }
 
-  const context = getTransactionContext(dataSource);
+  const context = getOrCreateTransactionContext(dataSource);
   const contextData = context.getStore();
   return contextData ? contextData.manager : null;
 }
