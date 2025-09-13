@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**", "*.ts", "*.js"]
+    "includes": ["src/decorators/**", "src/index.ts", "*.ts", "*.js"]
   },
   "formatter": {
     "enabled": true,
