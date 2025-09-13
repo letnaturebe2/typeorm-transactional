@@ -1,7 +1,10 @@
-import {DataSource} from 'typeorm';
-import {BaseTransactionalService, Transactional} from "@/decorators/transactional";
-import {User} from "../entity/user.model";
-import {CreateUserDto} from "../types/dto";
+import type { DataSource } from 'typeorm';
+import {
+  BaseTransactionalService,
+  Transactional,
+} from '@/decorators/transactional';
+import { User } from '../entity/user.model';
+import type { CreateUserDto } from '../types/dto';
 
 export class UserService extends BaseTransactionalService {
   constructor(dataSource: DataSource) {
@@ -11,7 +14,7 @@ export class UserService extends BaseTransactionalService {
   @Transactional()
   async createUser(userData: CreateUserDto): Promise<User> {
     const userRepo = this.getRepository(User);
-    
+
     const user = new User();
     user.userId = userData.userId;
     user.name = userData.name;

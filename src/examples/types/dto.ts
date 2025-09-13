@@ -15,4 +15,4 @@ export interface SignupDto {
   organizationId: string;
   userId: string;
   userName: string;
-} 
+}

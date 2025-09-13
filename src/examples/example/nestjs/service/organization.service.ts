@@ -1,7 +1,10 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Inject, Injectable } from '@nestjs/common';
+import type { DataSource } from 'typeorm';
+import {
+  BaseTransactionalService,
+  Transactional,
+} from '@/decorators/transactional';
 import { Organization } from '../../../entity/organization.model';
-import {BaseTransactionalService, Transactional} from "../../../../src";
 
 export interface CreateOrganizationDto {
   organizationId: string;
@@ -10,14 +13,18 @@ export interface CreateOrganizationDto {
 
 @Injectable()
 export class NestJSOrganizationService extends BaseTransactionalService {
-  constructor(@Inject('DATA_SOURCE') protected readonly dataSource: DataSource) {
+  constructor(
+    @Inject('DATA_SOURCE') protected readonly dataSource: DataSource,
+  ) {
     super(dataSource);
   }
 
   @Transactional()
-  async createOrganization(orgData: CreateOrganizationDto): Promise<Organization> {
+  async createOrganization(
+    orgData: CreateOrganizationDto,
+  ): Promise<Organization> {
     const repository = this.getRepository(Organization);
-    
+
     const organization = repository.create({
       organizationId: orgData.organizationId,
       isEnterprise: orgData.isEnterprise || false,

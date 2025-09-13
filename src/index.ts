@@ -1,8 +1,3 @@
-export type {
-  CreateOrganizationDto,
-  CreateUserDto,
-  SignupDto,
-} from '../examples/types/dto';
 export {
   BaseTransactionalService,
   getCurrentTransactionManager,

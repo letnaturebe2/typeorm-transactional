@@ -1,8 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { User } from '../../../entity/user.model';
+import { Inject, Injectable } from '@nestjs/common';
+import type { DataSource } from 'typeorm';
+import {
+  BaseTransactionalService,
+  Transactional,
+} from '@/decorators/transactional';
 import { Organization } from '../../../entity/organization.model';
-import {BaseTransactionalService, Transactional} from "../../../../src";
+import { User } from '../../../entity/user.model';
 
 export interface CreateUserDto {
   userId: string;
@@ -13,14 +16,16 @@ export interface CreateUserDto {
 
 @Injectable()
 export class NestJSUserService extends BaseTransactionalService {
-  constructor(@Inject('DATA_SOURCE') protected readonly dataSource: DataSource) {
+  constructor(
+    @Inject('DATA_SOURCE') protected readonly dataSource: DataSource,
+  ) {
     super(dataSource);
   }
 
   @Transactional()
   async createUser(userData: CreateUserDto): Promise<User> {
     const userRepository = this.getRepository(User);
-    
+
     const user = userRepository.create({
       userId: userData.userId,
       name: userData.name,
@@ -32,10 +37,10 @@ export class NestJSUserService extends BaseTransactionalService {
     // If organizationId is provided, link to organization
     if (userData.organizationId) {
       const orgRepository = this.getRepository(Organization);
-      const organization = await orgRepository.findOneBy({ 
-        organizationId: userData.organizationId 
+      const organization = await orgRepository.findOneBy({
+        organizationId: userData.organizationId,
       });
-      
+
       if (organization) {
         user.organization = organization;
       }

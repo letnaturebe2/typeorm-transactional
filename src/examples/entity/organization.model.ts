@@ -16,4 +16,4 @@ export class Organization extends BaseEntity {
     (user: User) => user.organization,
   )
   users: User[];
-} 
+}

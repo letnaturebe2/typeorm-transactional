@@ -1,26 +1,33 @@
-import { DataSource } from 'typeorm';
-import { OrganizationService } from './organization.service';
-import { UserService } from './user.service';
-import {BaseTransactionalService, Transactional} from "@/decorators/transactional";
-import {User} from "../entity/user.model";
-import {Organization} from "../entity/organization.model";
-import {SignupDto} from "../types/dto";
+import type { DataSource } from 'typeorm';
+import {
+  BaseTransactionalService,
+  Transactional,
+} from '@/decorators/transactional';
+import type { Organization } from '../entity/organization.model';
+import { User } from '../entity/user.model';
+import type { SignupDto } from '../types/dto';
+import type { OrganizationService } from './organization.service';
+import type { UserService } from './user.service';
 
 export class SignupService extends BaseTransactionalService {
   constructor(
     dataSource: DataSource,
     protected readonly organizationService: OrganizationService,
-    protected readonly userService: UserService
+    protected readonly userService: UserService,
   ) {
     super(dataSource);
   }
 
   @Transactional()
-  async signup(signupData: SignupDto): Promise<{ organization: Organization; user: User }> {
+  async signup(
+    signupData: SignupDto,
+  ): Promise<{ organization: Organization; user: User }> {
     return await this.performSignup(signupData);
   }
 
-  async signupWithoutTransaction(signupData: SignupDto): Promise<{ organization: Organization; user: User }> {
+  async signupWithoutTransaction(
+    signupData: SignupDto,
+  ): Promise<{ organization: Organization; user: User }> {
     return await this.performSignup(signupData);
   }
 
@@ -28,7 +35,9 @@ export class SignupService extends BaseTransactionalService {
    * Performs the actual signup logic in a private method
    * Transaction handling depends on whether the calling method has @Transactional decorator
    */
-  private async performSignup(signupData: SignupDto): Promise<{ organization: Organization; user: User }> {
+  private async performSignup(
+    signupData: SignupDto,
+  ): Promise<{ organization: Organization; user: User }> {
     // 1. Create organization
     const organization = await this.organizationService.createOrganization({
       organizationId: signupData.organizationId,
@@ -54,7 +63,9 @@ export class SignupService extends BaseTransactionalService {
    * If user creation fails after organization creation succeeds, organization won't be rolled back
    */
   @Transactional()
-  async signupWithSeparateTransactions(signupData: SignupDto): Promise<{ organization: Organization; user: User }> {
+  async signupWithSeparateTransactions(
+    signupData: SignupDto,
+  ): Promise<{ organization: Organization; user: User }> {
     // 1. Create organization - separate REQUIRES_NEW transaction
     const organization = await this.organizationService.createOrganization({
       organizationId: signupData.organizationId,

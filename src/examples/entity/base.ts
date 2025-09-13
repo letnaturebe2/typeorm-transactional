@@ -1,4 +1,8 @@
-import { CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  CreateDateColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export abstract class BaseEntity {
   @PrimaryGeneratedColumn()
@@ -9,4 +13,4 @@ export abstract class BaseEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}

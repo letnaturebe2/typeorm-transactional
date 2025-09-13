@@ -1,9 +1,9 @@
+import { Organization } from '../../entity/organization.model';
+import { User } from '../../entity/user.model';
+import { OrganizationService } from '../../service/organization.service';
+import { SignupService } from '../../service/signup.service';
+import { UserService } from '../../service/user.service';
 import { testDataSource } from './test-db';
-import {Organization} from "../../entity/organization.model";
-import {User} from "../../entity/user.model";
-import {OrganizationService} from "../../service/organization.service";
-import {UserService} from "../../service/user.service";
-import {SignupService} from "../../service/signup.service";
 
 let isInitialized = false;
 
@@ -36,9 +36,9 @@ export function getServices() {
   }
   if (!signupServiceInstance) {
     signupServiceInstance = new SignupService(
-      testDataSource, 
-      organizationServiceInstance, 
-      userServiceInstance
+      testDataSource,
+      organizationServiceInstance,
+      userServiceInstance,
     );
   }
 
