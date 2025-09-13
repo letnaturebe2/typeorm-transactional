@@ -7,8 +7,8 @@ import {
 import type { Organization } from '../../../entity/organization.model';
 import { User } from '../../../entity/user.model';
 import type { SignupDto } from '../../../types/dto';
-import type { NestJSOrganizationService } from './organization.service';
-import type { NestJSUserService } from './user.service';
+import { NestJSOrganizationService } from './organization.service';
+import { NestJSUserService } from './user.service';
 
 @Injectable()
 export class NestJSSignupService extends BaseTransactionalService {

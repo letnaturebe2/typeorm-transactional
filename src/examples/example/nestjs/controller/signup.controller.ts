@@ -5,7 +5,7 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-import type { NestJSSignupService } from '../service/signup.service';
+import { NestJSSignupService } from '../service/signup.service';
 
 export interface SignupRequest {
   organizationId: string;
