@@ -39,10 +39,29 @@ npm install typeorm-transactional-service
 
 ### 1. Service Implementation
 
+See the Quick Start `UserService` example above for a minimal template. Key points:
+
+- Extend `BaseTransactionalService` and inject `DataSource` in the constructor.
+- Use `this.getRepository(Entity)` inside transactions; `this.getManager()` for direct manager access when needed.
+- Decorate write methods with `@Transactional(options?)` to define transaction boundaries and propagation.
+
+### 2. Multi-Service Transactions
+
 ```typescript
-import { DataSource } from 'typeorm';
-import { BaseTransactionalService, Transactional } from 'typeorm-transactional-service';
-import { User } from './entity/user.model';
+// Both services also use @Transactional on their write methods
+export class OrganizationService extends BaseTransactionalService {
+  constructor(dataSource: DataSource) {
+    super(dataSource);
+  }
+
+  @Transactional()
+  async createOrganization(orgData: { organizationId: string }) {
+    const orgRepo = this.getRepository(Organization);
+    const organization = new Organization();
+    organization.organizationId = orgData.organizationId;
+    return await orgRepo.save(organization);
+  }
+}
 
 export class UserService extends BaseTransactionalService {
   constructor(dataSource: DataSource) {
@@ -50,21 +69,19 @@ export class UserService extends BaseTransactionalService {
   }
 
   @Transactional()
-  async createUser(userData: CreateUserDto) {
-    // Use this.getRepository() to get transaction-aware repository
+  async createUser(userData: { userId: string; name: string }) {
     const userRepo = this.getRepository(User);
-
-    // Or use this.getManager() for direct entity manager access
-    // const manager = this.getManager();
-
-    return await userRepo.save(userRepo.create(userData));
+    const user = new User();
+    user.userId = userData.userId;
+    user.name = userData.name;
+    return await userRepo.save(user);
   }
+
+  // Example: start a new independent transaction
+  // @Transactional({ propagation: 'REQUIRES_NEW' })
+  // async createUserWithRequiresNew(dto: ...) { /* ... */ }
 }
-```
 
-### 2. Multi-Service Transactions
-
-```typescript
 export class SignupService extends BaseTransactionalService {
   constructor(
     dataSource: DataSource,
@@ -77,13 +94,12 @@ export class SignupService extends BaseTransactionalService {
   // All operations in a single transaction
   @Transactional()
   async signup(signupData: SignupDto) {
-    // 1. Create organization
+    // 1. Create organization (uses same transaction)
     const organization = await this.organizationService.createOrganization({
       organizationId: signupData.organizationId,
-      isEnterprise: false,
     });
 
-    // 2. Create user
+    // 2. Create user (uses same transaction)
     const user = await this.userService.createUser({
       userId: signupData.userId,
       name: signupData.userName,
@@ -102,7 +118,6 @@ export class SignupService extends BaseTransactionalService {
     // If user creation fails, organization won't be rolled back
     const organization = await this.organizationService.createOrganization({
       organizationId: signupData.organizationId,
-      isEnterprise: false,
     });
 
     const user = await this.userService.createUser({
@@ -221,9 +236,21 @@ class OrganizationService extends BaseTransactionalService {
   }
 
   @Transactional()
-  async createOrganization(dto: { organizationId: string; isEnterprise?: boolean }) {
+  async createOrganization(dto: { organizationId: string }) {
     const orgRepo = this.getRepository(Organization);
     return await orgRepo.save(orgRepo.create(dto));
+  }
+}
+
+class UserService extends BaseTransactionalService {
+  constructor(dataSource: DataSource) {
+    super(dataSource);
+  }
+
+  @Transactional()
+  async createUser(dto: { userId: string; name: string }) {
+    const userRepo = this.getRepository(User);
+    return await userRepo.save(userRepo.create(dto));
   }
 }
 
@@ -241,7 +268,6 @@ class SignupService extends BaseTransactionalService {
   async signup(dto: { organizationId: string; userId: string; userName: string }) {
     const organization = await this.orgService.createOrganization({
       organizationId: dto.organizationId,
-      isEnterprise: false,
     });
 
     const user = await this.userService.createUser({
@@ -335,6 +361,20 @@ export class UserService extends BaseTransactionalService {
   }
 }
 
+// organization.service.ts
+@Injectable()
+export class OrganizationService extends BaseTransactionalService {
+  constructor(@Inject('DATA_SOURCE') protected readonly dataSource: DataSource) {
+    super(dataSource);
+  }
+
+  @Transactional()
+  async createOrganization(dto: { organizationId: string }) {
+    const orgRepo = this.getRepository(Organization);
+    return await orgRepo.save(orgRepo.create(dto));
+  }
+}
+
 // signup.service.ts
 @Injectable()
 export class SignupService extends BaseTransactionalService {
@@ -351,7 +391,6 @@ export class SignupService extends BaseTransactionalService {
   async signup(dto: { organizationId: string; userId: string; userName: string }) {
     const organization = await this.organizationService.createOrganization({
       organizationId: dto.organizationId,
-      isEnterprise: false,
     });
 
     const user = await this.userService.createUser({
